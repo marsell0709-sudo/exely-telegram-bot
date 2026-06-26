@@ -73,16 +73,17 @@ async def content_full(message: Message):
     try:
         data = await exely.get_property_full("505576")
 
-        room_types = data.get("roomTypes", [])
+        room = data["roomTypes"][0]
 
         import json
 
-        text = json.dumps(room_types, indent=2, ensure_ascii=False)
-
-        if len(text) > 3500:
-            text = text[:3500] + "\n\n... ответ обрезан ..."
-
-        await message.answer(text)
+        await message.answer(
+            json.dumps(
+                room.get("images", []),
+                indent=2,
+                ensure_ascii=False
+            )
+        )
 
     except Exception as e:
         await message.answer(f"❌ {e}")
