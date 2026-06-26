@@ -10,7 +10,7 @@ router = Router()
 @router.message(Command("testapi"))
 async def test_api(message: Message):
     try:
-        token = exely.get_token()
+        token = await exely.get_token()
 
         await message.answer(
             "✅ Подключение к Exely успешно!\n\n"
