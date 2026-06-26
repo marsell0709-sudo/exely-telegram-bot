@@ -49,3 +49,23 @@ async def test_content(message: Message):
         await message.answer(
             f"❌ Ошибка Content API:\n\n{e}"
         )
+
+@router.message(Command("searchapi"))
+async def search_api(message: Message):
+    try:
+        data = await exely.search_test()
+
+        import json
+
+        text = json.dumps(data, indent=2, ensure_ascii=False)
+
+        if len(text) > 3500:
+            text = text[:3500]
+
+        await message.answer(
+            f"<pre>{text}</pre>",
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        await message.answer(f"❌ {e}")
