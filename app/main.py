@@ -12,7 +12,7 @@ from app.handlers.admin import router as admin_router
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
-    bot = Bot(token=settings.bot_token)
+    bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.include_router(start.router)
