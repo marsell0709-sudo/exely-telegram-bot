@@ -79,9 +79,30 @@ async def get_guests(message: Message, state: FSMContext) -> None:
         await message.answer(f"❌ Ошибка поиска в Exely:\n\n{e}")
         return
 
-    await message.answer(
-        "✅ Search API ответил успешно.\n\n"
-        f"Даты: {data['checkin']} — {data['checkout']}\n"
-        f"Гостей: {guests}\n\n"
-        f"Ответ Exely:\n{str(result)[:3000]}"
-    )
+        room_stays = result.get("roomStays", [])
+
+    if not room_stays:
+        await message.answer("К сожалению, на эти даты свободных вариантов нет.")
+        return
+
+    for stay in room_stays[:5]:
+        room_id = stay.get("roomType", {}).get("id", "—")
+        rate_id = stay.get("ratePlan", {}).get("id", "—")
+        total = stay.get("total", {})
+        price = total.get("priceBeforeTax", 0)
+        currency = stay.get("currencyCode", "UZS")
+        availability = stay.get("availability", 0)
+        placement = stay.get("fullPlacementsName", "")
+        booking_link = stay.get("bookingFormLink", "")
+
+        text = (
+            "🏠 Доступный вариант\n\n"
+            f"Room ID: {room_id}\n"
+            f"Rate ID: {rate_id}\n"
+            f"👥 {placement}\n"
+            f"📦 Доступно: {availability}\n"
+            f"💰 Цена за весь период: {price:,.0f} {currency}\n\n"
+            f"🔗 Ссылка для бронирования:\n{booking_link}"
+        )
+
+        await message.answer(text)
