@@ -126,7 +126,7 @@ async def get_guests(message: Message, state: FSMContext):
     for index, stay in enumerate(list(cheapest_by_room.values())[:5], start=1):
         room_id = str(stay.get("roomType", {}).get("id"))
         room_info = room_types_map.get(room_id, {})
-
+        image_url = room_info.get("image")
         room_name = room_info.get("name", f"Апартамент #{index}")
         description = clean_description(room_info.get("description", ""))
 
@@ -156,9 +156,17 @@ async def get_guests(message: Message, state: FSMContext):
             ]
         )
 
-        await message.answer(
-            text,
-            parse_mode="HTML",
-            reply_markup=keyboard,
-            disable_web_page_preview=True,
-        )
+      if image_url:
+    await message.answer_photo(
+        photo=image_url,
+        caption=text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+else:
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+        disable_web_page_preview=True,
+    )
