@@ -46,6 +46,19 @@ class ExelyAPI:
         response.raise_for_status()
         return response.json()
 
+async def search_test(self):
+    token = await self.get_token()
 
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            f"{settings.EXELY_BASE_URL}/search/swagger/v1/swagger.json",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+        )
+
+    response.raise_for_status()
+    return response.json()
 
 exely = ExelyAPI()
