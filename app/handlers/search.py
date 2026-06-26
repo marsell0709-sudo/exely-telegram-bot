@@ -242,9 +242,16 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         description = clean_description(room_info.get("description", ""))
         image_url = room_info.get("image")
 
-        price = stay.get("total", {}).get("priceBeforeTax", 0)
-        currency = stay.get("currencyCode", "UZS")
-        currency_text = "сум" if currency == "UZS" else currency
+       price_total = stay.get("total", {}).get("priceBeforeTax", 0)
+
+checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
+checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
+nights = (checkout_date - checkin_date).days
+
+price_per_night = price_total / nights if nights > 0 else price_total
+
+currency = stay.get("currencyCode", "UZS")
+currency_text = "сум" if currency == "UZS" else currency
 
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
@@ -253,7 +260,9 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         text = (
             f"🏠 <b>{room_name}</b>\n\n"
             f"👥 {placement}\n"
-            f"💰 <b>{format_price(price)} {currency_text}</b>\n"
+            f"💰 За сутки: <b>{format_price(price_per_night)} {currency_text}</b>\n"
+            f"💳 Общая стоимость: <b>{format_price(price_total)} {currency_text}</b>\n"
+            f"🌙 Ночей: {nights}\n"
             f"📦 Осталось: {availability}\n\n"
             f"📝 {description}\n\n"
             f"✅ Доступно для бронирования"
