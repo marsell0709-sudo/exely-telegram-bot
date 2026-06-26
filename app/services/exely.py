@@ -61,5 +61,25 @@ class ExelyAPI:
         response.raise_for_status()
         return response.json()
 
+    async def search_room_stays(self, arrival_date: str, departure_date: str, adults: int):
+        token = await self.get_token()
+
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(
+                f"{settings.EXELY_BASE_URL}/search/v1/properties/505576/room-stays",
+                params={
+                    "arrivalDate": arrival_date,
+                    "departureDate": departure_date,
+                    "adults": adults,
+                },
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                },
+            )
+
+        response.raise_for_status()
+        return response.json()
+
 
 exely = ExelyAPI()
