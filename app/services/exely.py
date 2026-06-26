@@ -71,11 +71,11 @@ class ExelyAPI:
             room_id = str(room.get("id"))
             images = room.get("images", [])
 
-            result[room_id] = {
-                "name": room.get("name", "Апартамент"),
-                "description": room.get("description", ""),
-                "image": images[0].get("url") if images else None,
-            }
+           result[room_id] = {
+    "name": room.get("name", "Апартамент"),
+    "description": room.get("description", ""),
+    "images": [img.get("url") for img in images if img.get("url")],
+}
 
         return result
 
