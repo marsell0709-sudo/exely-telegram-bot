@@ -62,10 +62,7 @@ async def search_api(message: Message):
         if len(text) > 3500:
             text = text[:3500]
 
-        await message.answer(
-            f"<pre>{text}</pre>",
-            parse_mode="HTML"
-        )
+        await message.answer(text[:3500])
 
     except Exception as e:
         await message.answer(f"❌ {e}")
