@@ -238,7 +238,8 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
 
         room_name = room_info.get("name", f"Апартамент #{index}")
         description = clean_description(room_info.get("description", ""))
-        image_url = room_info.get("image")
+        images = room_info.get("images", [])
+        image_url = images[0] if images else None
 
         price_total = stay.get("total", {}).get("priceBeforeTax", 0)
 
@@ -256,15 +257,15 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         booking_link = stay.get("bookingFormLink", "")
 
         text = (
-            f"🏠 <b>{room_name}</b>\n\n"
-            f"👥 {placement}\n"
-            f"💰 За сутки: <b>{format_price(price_per_night)} {currency_text}</b>\n"
-            f"💳 Общая стоимость: <b>{format_price(price_total)} {currency_text}</b>\n"
-            f"🌙 Ночей: {nights}\n"
-            f"📦 Осталось: {availability}\n\n"
-            f"📝 {description}\n\n"
-            f"✅ Доступно для бронирования"
-        )
+    f"🏠 <b>{room_name}</b>\n\n"
+    f"👥 Вместимость: {placement}\n"
+    f"🌙 Ночей: {nights}\n\n"
+    f"💵 За сутки: <b>{format_price(price_per_night)} {currency_text}</b>\n"
+    f"💰 Итого: <b>{format_price(price_total)} {currency_text}</b>\n\n"
+    f"📦 Свободно: {availability}\n\n"
+    f"📝 {description}\n\n"
+    f"✅ Доступно для бронирования"
+)
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
