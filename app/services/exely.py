@@ -36,7 +36,7 @@ class ExelyAPI:
 
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.get(
-                f"{settings.EXELY_BASE_URL}/content/",
+               f"{settings.EXELY_BASE_URL}/content/v1/content/"
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/json",
