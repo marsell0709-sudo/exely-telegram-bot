@@ -125,4 +125,20 @@ class ExelyAPI:
         response.raise_for_status()
         return response.json()
 
+    async def get_room_types_map(self, property_id: str = "505576"):
+        data = await self.get_property_full(property_id)
+
+        room_types = data.get("roomTypes", [])
+        result = {}
+
+        for room in room_types:
+            room_id = str(room.get("id"))
+            result[room_id] = {
+                "name": room.get("name", "Апартамент"),
+                "description": room.get("description", ""),
+                "images": room.get("images", []),
+            }
+
+        return result
+
 exely = ExelyAPI()
