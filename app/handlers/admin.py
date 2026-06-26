@@ -97,3 +97,16 @@ async def room_types(message: Message):
 
     except Exception as e:
         await message.answer(f"❌ Ошибка Room Types API:\n\n{e}")
+
+@router.message(Command("contentswagger"))
+async def content_swagger(message: Message):
+    try:
+        data = await exely.content_swagger()
+
+        paths = list(data.get("paths", {}).keys())
+        text = "\n".join(paths[:50])
+
+        await message.answer(f"Content API endpoints:\n\n{text}")
+
+    except Exception as e:
+        await message.answer(f"❌ Ошибка Content Swagger:\n\n{e}")
