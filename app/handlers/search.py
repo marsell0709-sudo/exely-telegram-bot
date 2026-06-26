@@ -105,45 +105,48 @@ async def get_guests(message: Message, state: FSMContext):
             if price < old_price:
                 cheapest_by_room[room_id] = stay
 
-    for index, stay in enumerate(list(cheapest_by_room.values())[:5], start=1):
-        price = stay.get("total", {}).get("priceBeforeTax", 0)
-        currency = stay.get("currencyCode", "UZS")
-        availability = stay.get("availability", 0)
-        placement = stay.get("fullPlacementsName", "")
-        booking_link = stay.get("bookingFormLink", "")
+   for index, stay in enumerate(list(cheapest_by_room.values())[:5], start=1):
 
-        text = (
-                    room_id = str(stay.get("roomType", {}).get("id"))
-        room_info = room_types_map.get(room_id, {})
-        room_name = room_info.get("name", f"Апартамент #{index}")
-        description = room_info.get("description", "")
+    room_id = str(stay.get("roomType", {}).get("id"))
+    room_info = room_types_map.get(room_id, {})
 
-        short_description = description.replace("\n", " ")
-        if len(short_description) > 250:
-            short_description = short_description[:250] + "..."
+    room_name = room_info.get("name", f"Апартамент #{index}")
+    description = room_info.get("description", "")
 
-        text = (
-            f"🏠 <b>{room_name}</b>\n\n"
-            f"👥 {placement}\n"
-            f"💰 <b>{format_price(price)} {currency}</b>\n"
-            f"📦 Осталось: {availability}\n\n"
-            f"✅ Доступно для бронирования"
-        )
+    short_description = description.replace("\n", " ").replace("\r", "")
 
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="🔗 Забронировать",
-                        url=booking_link
-                    )
-                ]
+    if len(short_description) > 250:
+        short_description = short_description[:250] + "..."
+
+    price = stay.get("total", {}).get("priceBeforeTax", 0)
+    currency = stay.get("currencyCode", "UZS")
+    availability = stay.get("availability", 0)
+    placement = stay.get("fullPlacementsName", "")
+    booking_link = stay.get("bookingFormLink", "")
+
+    text = (
+        f"🏠 <b>{room_name}</b>\n\n"
+        f"👥 {placement}\n"
+        f"💰 <b>{format_price(price)} {currency}</b>\n"
+        f"📦 Осталось: {availability}\n\n"
+        f"📝 {short_description}\n\n"
+        f"✅ Доступно для бронирования"
+    )
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔗 Забронировать",
+                    url=booking_link,
+                )
             ]
-        )
+        ]
+    )
 
-        await message.answer(
-            text,
-            parse_mode="HTML",
-            reply_markup=keyboard,
-            disable_web_page_preview=True,
-        )
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+        disable_web_page_preview=True,
+    )
