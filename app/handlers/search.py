@@ -84,8 +84,6 @@ async def get_guests(message: Message, state: FSMContext):
         await message.answer("❌ На выбранные даты свободных вариантов нет.")
         return
 
-    for stay in room_stays[:5]:
-           # Показываем только 5 вариантов
     for index, stay in enumerate(room_stays[:5], start=1):
         total = stay.get("total", {})
         price = total.get("priceBeforeTax", 0)
