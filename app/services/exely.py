@@ -95,4 +95,19 @@ class ExelyAPI:
         response.raise_for_status()
         return response.json()
 
+    async def get_room_types(self, property_id: str = "505576"):
+        token = await self.get_token()
+
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(
+                f"{settings.EXELY_BASE_URL}/content/v1/properties/{property_id}/room-types",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                },
+            )
+
+        response.raise_for_status()
+        return response.json()
+
 exely = ExelyAPI()
