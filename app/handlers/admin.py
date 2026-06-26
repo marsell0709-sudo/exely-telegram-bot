@@ -82,3 +82,18 @@ async def content_full(message: Message):
 
     except Exception as e:
         await message.answer(f"❌ Ошибка Content Full API:\n\n{e}")
+
+@router.message(Command("roomtypes"))
+async def room_types(message: Message):
+    try:
+        data = await exely.get_room_types("505576")
+
+        text = json.dumps(data, indent=2, ensure_ascii=False)
+
+        if len(text) > 3500:
+            text = text[:3500] + "\n\n... ответ обрезан ..."
+
+        await message.answer(text)
+
+    except Exception as e:
+        await message.answer(f"❌ Ошибка Room Types API:\n\n{e}")
