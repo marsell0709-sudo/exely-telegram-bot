@@ -126,12 +126,15 @@ async def get_guests(message: Message, state: FSMContext):
     for index, stay in enumerate(list(cheapest_by_room.values())[:5], start=1):
         room_id = str(stay.get("roomType", {}).get("id"))
         room_info = room_types_map.get(room_id, {})
-        image_url = room_info.get("image")
+
         room_name = room_info.get("name", f"Апартамент #{index}")
         description = clean_description(room_info.get("description", ""))
+        image_url = room_info.get("image")
 
         price = stay.get("total", {}).get("priceBeforeTax", 0)
         currency = stay.get("currencyCode", "UZS")
+        currency_text = "сум" if currency == "UZS" else currency
+
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
         booking_link = stay.get("bookingFormLink", "")
@@ -139,7 +142,7 @@ async def get_guests(message: Message, state: FSMContext):
         text = (
             f"🏠 <b>{room_name}</b>\n\n"
             f"👥 {placement}\n"
-            f"💰 <b>{format_price(price)} {currency}</b>\n"
+            f"💰 <b>{format_price(price)} {currency_text}</b>\n"
             f"📦 Осталось: {availability}\n\n"
             f"📝 {description}\n\n"
             f"✅ Доступно для бронирования"
@@ -156,17 +159,17 @@ async def get_guests(message: Message, state: FSMContext):
             ]
         )
 
-      if image_url:
-    await message.answer_photo(
-        photo=image_url,
-        caption=text,
-        parse_mode="HTML",
-        reply_markup=keyboard,
-    )
-else:
-    await message.answer(
-        text,
-        parse_mode="HTML",
-        reply_markup=keyboard,
-        disable_web_page_preview=True,
-    )
+        if image_url:
+            await message.answer_photo(
+                photo=image_url,
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+        else:
+            await message.answer(
+                text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+                disable_web_page_preview=True,
+            )
