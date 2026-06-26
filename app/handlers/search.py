@@ -67,9 +67,7 @@ def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="Вс", callback_data="ignore"),
     ])
 
-    month_days = calendar.monthcalendar(year, month)
-
-    for week in month_days:
+    for week in calendar.monthcalendar(year, month):
         row = []
         for day in week:
             if day == 0:
@@ -165,10 +163,10 @@ async def calendar_date(callback: CallbackQuery, state: FSMContext):
         await state.update_data(checkin=selected_date)
         await state.set_state(SearchState.checkout)
 
-        next_day = datetime.strptime(selected_date, "%Y-%m-%d").date()
+        selected = datetime.strptime(selected_date, "%Y-%m-%d").date()
         await callback.message.edit_text(
             f"✅ Дата заезда: {selected_date}\n\n📅 Теперь выберите дату выезда:",
-            reply_markup=build_calendar(next_day.year, next_day.month, "checkout"),
+            reply_markup=build_calendar(selected.year, selected.month, "checkout"),
         )
 
     elif mode == "checkout":
@@ -242,16 +240,16 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         description = clean_description(room_info.get("description", ""))
         image_url = room_info.get("image")
 
-       price_total = stay.get("total", {}).get("priceBeforeTax", 0)
+        price_total = stay.get("total", {}).get("priceBeforeTax", 0)
 
-checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
-checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
-nights = (checkout_date - checkin_date).days
+        checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
+        checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
+        nights = (checkout_date - checkin_date).days
 
-price_per_night = price_total / nights if nights > 0 else price_total
+        price_per_night = price_total / nights if nights > 0 else price_total
 
-currency = stay.get("currencyCode", "UZS")
-currency_text = "сум" if currency == "UZS" else currency
+        currency = stay.get("currencyCode", "UZS")
+        currency_text = "сум" if currency == "UZS" else currency
 
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
