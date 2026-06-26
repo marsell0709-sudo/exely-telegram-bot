@@ -3,7 +3,7 @@ from datetime import datetime
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.services.exely import exely
 
@@ -23,6 +23,10 @@ def normalize_date(value: str) -> str:
         return datetime.strptime(value, "%d.%m.%Y").strftime("%Y-%m-%d")
 
     return datetime.strptime(value, "%Y-%m-%d").strftime("%Y-%m-%d")
+
+
+def format_price(value: float) -> str:
+    return f"{value:,.0f}".replace(",", " ")
 
 
 @router.message(F.text == "🏠 Найти квартиру")
@@ -84,25 +88,51 @@ async def get_guests(message: Message, state: FSMContext):
         await message.answer("❌ На выбранные даты свободных вариантов нет.")
         return
 
-    for index, stay in enumerate(room_stays[:5], start=1):
-        total = stay.get("total", {})
-        price = total.get("priceBeforeTax", 0)
+    cheapest_by_room = {}
+
+    for stay in room_stays:
+        room_id = stay.get("roomType", {}).get("id")
+        price = stay.get("total", {}).get("priceBeforeTax", 0)
+
+        if not room_id:
+            continue
+
+        if room_id not in cheapest_by_room:
+            cheapest_by_room[room_id] = stay
+        else:
+            old_price = cheapest_by_room[room_id].get("total", {}).get("priceBeforeTax", 0)
+            if price < old_price:
+                cheapest_by_room[room_id] = stay
+
+    for index, stay in enumerate(list(cheapest_by_room.values())[:5], start=1):
+        price = stay.get("total", {}).get("priceBeforeTax", 0)
         currency = stay.get("currencyCode", "UZS")
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
         booking_link = stay.get("bookingFormLink", "")
 
         text = (
-            f"🏠 <b>Вариант #{index}</b>\n\n"
+            f"🏠 <b>Апартамент #{index}</b>\n\n"
             f"👥 {placement}\n"
-            f"💰 <b>{price:,.0f} {currency}</b>\n"
+            f"💰 <b>{format_price(price)} {currency}</b>\n"
             f"📦 Осталось: {availability}\n\n"
-            f"✅ Доступно для бронирования\n\n"
-            f"🔗 <a href=\"{booking_link}\">Забронировать</a>"
+            f"✅ Доступно для бронирования"
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🔗 Забронировать",
+                        url=booking_link
+                    )
+                ]
+            ]
         )
 
         await message.answer(
             text,
             parse_mode="HTML",
+            reply_markup=keyboard,
             disable_web_page_preview=True,
         )
