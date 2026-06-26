@@ -46,12 +46,12 @@ class ExelyAPI:
         response.raise_for_status()
         return response.json()
 
-    async def search_test(self):
+    async def get_property_full(self, property_id: str = "505576"):
         token = await self.get_token()
 
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.get(
-                f"{settings.EXELY_BASE_URL}/search/swagger/v1/swagger.json",
+                f"{settings.EXELY_BASE_URL}/content/v1/properties/{property_id}",
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/json",
@@ -60,6 +60,24 @@ class ExelyAPI:
 
         response.raise_for_status()
         return response.json()
+
+    async def get_room_types_map(self, property_id: str = "505576"):
+        data = await self.get_property_full(property_id)
+
+        room_types = data.get("roomTypes", [])
+        result = {}
+
+        for room in room_types:
+            room_id = str(room.get("id"))
+            images = room.get("images", [])
+
+            result[room_id] = {
+                "name": room.get("name", "Апартамент"),
+                "description": room.get("description", ""),
+                "image": images[0].get("url") if images else None,
+            }
+
+        return result
 
     async def search_room_stays(self, arrival_date: str, departure_date: str, adults: int):
         token = await self.get_token()
@@ -80,67 +98,6 @@ class ExelyAPI:
 
         response.raise_for_status()
         return response.json()
-    async def get_property_full(self, property_id: str = "505576"):
-        token = await self.get_token()
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(
-                f"{settings.EXELY_BASE_URL}/content/v1/properties/{property_id}",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/json",
-                },
-            )
-
-        response.raise_for_status()
-        return response.json()
-
-    async def get_room_types(self, property_id: str = "505576"):
-        token = await self.get_token()
-
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(
-                f"{settings.EXELY_BASE_URL}/content/v1/properties/{property_id}/room-types",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/json",
-                },
-            )
-
-        response.raise_for_status()
-        return response.json()
-
-    async def content_swagger(self):
-        token = await self.get_token()
-
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(
-                f"{settings.EXELY_BASE_URL}/content/swagger/v1/swagger.json",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/json",
-                },
-            )
-
-        response.raise_for_status()
-        return response.json()
-
-    async def get_room_types_map(self, property_id: str = "505576"):
-        data = await self.get_property_full(property_id)
-
-        room_types = data.get("roomTypes", [])
-        result = {}
-
-        for room in room_types:
-            room_id = str(room.get("id"))
-           images = room.get("images", [])
-
-result[room_id] = {
-    "name": room.get("name", "Апартамент"),
-    "description": room.get("description", ""),
-    "image": images[0]["url"] if images else None,
-}
-
-        return result
 
 exely = ExelyAPI()
