@@ -1,3 +1,5 @@
+import json
+
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
@@ -29,10 +31,18 @@ async def test_content(message: Message):
     try:
         data = await exely.get_content_test()
 
+        text = json.dumps(
+            data,
+            indent=2,
+            ensure_ascii=False
+        )
+
+        if len(text) > 3500:
+            text = text[:3500] + "\n\n... ответ обрезан ..."
+
         await message.answer(
-            "✅ Content API ответил успешно.\n\n"
-            f"Тип ответа: {type(data).__name__}\n"
-            f"Первые данные:\n{str(data)[:1000]}"
+            f"<pre>{text}</pre>",
+            parse_mode="HTML"
         )
 
     except Exception as e:
