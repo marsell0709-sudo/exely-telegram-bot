@@ -26,17 +26,17 @@ def normalize_date(value: str) -> str:
 
 
 @router.message(F.text == "🏠 Найти квартиру")
-async def find_apartment(message: Message, state: FSMContext) -> None:
+async def find_apartment(message: Message, state: FSMContext):
     await state.set_state(SearchState.checkin)
     await message.answer("Введите дату заезда в формате ДД.ММ.ГГГГ")
 
 
 @router.message(SearchState.checkin)
-async def get_checkin(message: Message, state: FSMContext) -> None:
+async def get_checkin(message: Message, state: FSMContext):
     try:
         checkin = normalize_date(message.text)
     except ValueError:
-        await message.answer("Неверный формат даты. Пример: 26.07.2026")
+        await message.answer("❌ Неверный формат даты. Пример: 26.06.2026")
         return
 
     await state.update_data(checkin=checkin)
@@ -45,11 +45,11 @@ async def get_checkin(message: Message, state: FSMContext) -> None:
 
 
 @router.message(SearchState.checkout)
-async def get_checkout(message: Message, state: FSMContext) -> None:
+async def get_checkout(message: Message, state: FSMContext):
     try:
         checkout = normalize_date(message.text)
     except ValueError:
-        await message.answer("Неверный формат даты. Пример: 28.07.2026")
+        await message.answer("❌ Неверный формат даты. Пример: 28.06.2026")
         return
 
     await state.update_data(checkout=checkout)
@@ -58,15 +58,14 @@ async def get_checkout(message: Message, state: FSMContext) -> None:
 
 
 @router.message(SearchState.guests)
-async def get_guests(message: Message, state: FSMContext) -> None:
+async def get_guests(message: Message, state: FSMContext):
     data = await state.get_data()
     await state.clear()
 
     try:
         guests = int(message.text)
     except ValueError:
-        await message.answer("Введите количество гостей числом, например: 2")
-        await state.set_state(SearchState.guests)
+        await message.answer("Введите количество гостей числом.")
         return
 
     try:
@@ -79,30 +78,37 @@ async def get_guests(message: Message, state: FSMContext) -> None:
         await message.answer(f"❌ Ошибка поиска в Exely:\n\n{e}")
         return
 
-        room_stays = result.get("roomStays", [])
+    room_stays = result.get("roomStays", [])
 
     if not room_stays:
-        await message.answer("К сожалению, на эти даты свободных вариантов нет.")
+        await message.answer("❌ На выбранные даты свободных вариантов нет.")
         return
 
     for stay in room_stays[:5]:
         room_id = stay.get("roomType", {}).get("id", "—")
         rate_id = stay.get("ratePlan", {}).get("id", "—")
+
         total = stay.get("total", {})
         price = total.get("priceBeforeTax", 0)
+
         currency = stay.get("currencyCode", "UZS")
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
+
         booking_link = stay.get("bookingFormLink", "")
 
         text = (
-            "🏠 Доступный вариант\n\n"
-            f"Room ID: {room_id}\n"
-            f"Rate ID: {rate_id}\n"
+            "🏠 <b>Доступный вариант</b>\n\n"
             f"👥 {placement}\n"
-            f"📦 Доступно: {availability}\n"
-            f"💰 Цена за весь период: {price:,.0f} {currency}\n\n"
-            f"🔗 Ссылка для бронирования:\n{booking_link}"
+            f"💰 <b>{price:,.0f} {currency}</b>\n"
+            f"📦 Осталось: {availability}\n\n"
+            f"🆔 Room ID: {room_id}\n"
+            f"🆔 Rate ID: {rate_id}\n\n"
+            f"🔗 <a href=\"{booking_link}\">Перейти к бронированию</a>"
         )
 
-        await message.answer(text)
+        await message.answer(
+            text,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
