@@ -3,10 +3,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
 
-from app.services.exely import ExelyClient
+from app.services.exely import exely
 
 router = Router()
-exely = ExelyClient()
 
 
 class SearchState(StatesGroup):
@@ -47,15 +46,16 @@ async def get_guests(message: Message, state: FSMContext) -> None:
         await state.set_state(SearchState.guests)
         return
 
-    apartments = await exely.search_availability(data["checkin"], data["checkout"], guests)
-    if not apartments:
-        await message.answer("На эти даты свободных объектов нет.")
+    try:
+        token = await exely.get_token()
+    except Exception as e:
+        await message.answer(f"❌ Ошибка подключения к Exely:\n\n{e}")
         return
 
-    for item in apartments:
-        await message.answer(
-            f"🏠 {item['title']}\n"
-            f"💰 {item['price']}\n"
-            f"📝 {item['description']}\n\n"
-            "Для бронирования напишите менеджеру. На следующем этапе добавим кнопку бронирования."
-        )
+    await message.answer(
+        "✅ Подключение к Exely успешно.\n\n"
+        "Поиск квартир через Search API добавим следующим этапом.\n"
+        f"Гости: {guests}\n"
+        f"Даты: {data['checkin']} — {data['checkout']}\n"
+        f"Токен получен: {token[:20]}..."
+    )
