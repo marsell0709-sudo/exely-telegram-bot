@@ -85,26 +85,22 @@ async def get_guests(message: Message, state: FSMContext):
         return
 
     for stay in room_stays[:5]:
-        room_id = stay.get("roomType", {}).get("id", "—")
-        rate_id = stay.get("ratePlan", {}).get("id", "—")
-
+           # Показываем только 5 вариантов
+    for index, stay in enumerate(room_stays[:5], start=1):
         total = stay.get("total", {})
         price = total.get("priceBeforeTax", 0)
-
         currency = stay.get("currencyCode", "UZS")
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
-
         booking_link = stay.get("bookingFormLink", "")
 
         text = (
-            "🏠 <b>Доступный вариант</b>\n\n"
+            f"🏠 <b>Вариант #{index}</b>\n\n"
             f"👥 {placement}\n"
             f"💰 <b>{price:,.0f} {currency}</b>\n"
             f"📦 Осталось: {availability}\n\n"
-            f"🆔 Room ID: {room_id}\n"
-            f"🆔 Rate ID: {rate_id}\n\n"
-            f"🔗 <a href=\"{booking_link}\">Перейти к бронированию</a>"
+            f"✅ Доступно для бронирования\n\n"
+            f"🔗 <a href=\"{booking_link}\">Забронировать</a>"
         )
 
         await message.answer(
