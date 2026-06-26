@@ -92,6 +92,7 @@ async def get_guests(message: Message, state: FSMContext):
 
     for stay in room_stays:
         room_id = stay.get("roomType", {}).get("id")
+            room_types_map = await exely.get_room_types_map()
         price = stay.get("total", {}).get("priceBeforeTax", 0)
 
         if not room_id:
@@ -112,7 +113,17 @@ async def get_guests(message: Message, state: FSMContext):
         booking_link = stay.get("bookingFormLink", "")
 
         text = (
-            f"🏠 <b>Апартамент #{index}</b>\n\n"
+                    room_id = str(stay.get("roomType", {}).get("id"))
+        room_info = room_types_map.get(room_id, {})
+        room_name = room_info.get("name", f"Апартамент #{index}")
+        description = room_info.get("description", "")
+
+        short_description = description.replace("\n", " ")
+        if len(short_description) > 250:
+            short_description = short_description[:250] + "..."
+
+        text = (
+            f"🏠 <b>{room_name}</b>\n\n"
             f"👥 {placement}\n"
             f"💰 <b>{format_price(price)} {currency}</b>\n"
             f"📦 Осталось: {availability}\n\n"
