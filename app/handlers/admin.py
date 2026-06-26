@@ -73,15 +73,14 @@ async def content_full(message: Message):
     try:
         data = await exely.get_property_full("505576")
 
-        text = json.dumps(data, indent=2, ensure_ascii=False)
+        keys = "\n".join(data.keys())
 
-        if len(text) > 3500:
-            text = text[:3500] + "\n\n... ответ обрезан ..."
-
-        await message.answer(text)
+        await message.answer(
+            f"Ключи объекта:\n\n{keys}"
+        )
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка Content Full API:\n\n{e}")
+        await message.answer(f"❌ {e}")
 
 @router.message(Command("roomtypes"))
 async def room_types(message: Message):
