@@ -5,12 +5,7 @@ from datetime import date, datetime
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import (
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Message,
-)
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.services.exely import exely
 
@@ -36,15 +31,10 @@ def format_price(value: float) -> str:
 def clean_description(value: str, limit: int = 220) -> str:
     if not value:
         return "Описание скоро будет добавлено."
-
     value = re.sub(r"<[^>]+>", " ", value)
     value = value.replace("\\n", " ").replace("\n", " ").replace("\r", " ")
     value = re.sub(r"\s+", " ", value).strip()
-
-    if len(value) > limit:
-        value = value[:limit].strip() + "..."
-
-    return value
+    return value[:limit].strip() + "..." if len(value) > limit else value
 
 
 def get_price(stay: dict) -> float:
@@ -79,7 +69,6 @@ def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
                 continue
 
             current_date = date(year, month, day)
-
             if current_date < today:
                 row.append(InlineKeyboardButton(text="·", callback_data="ignore"))
             else:
@@ -115,7 +104,6 @@ def guests_keyboard() -> InlineKeyboardMarkup:
 async def find_apartment(message: Message, state: FSMContext):
     today = date.today()
     await state.set_state(SearchState.checkin)
-
     await message.answer(
         "📅 Выберите дату заезда:",
         reply_markup=build_calendar(today.year, today.month, "checkin"),
@@ -128,15 +116,12 @@ async def calendar_prev(callback: CallbackQuery):
     year = int(year)
     month = int(month)
 
-    if month == 1:
-        year -= 1
+    month -= 1
+    if month == 0:
         month = 12
-    else:
-        month -= 1
+        year -= 1
 
-    await callback.message.edit_reply_markup(
-        reply_markup=build_calendar(year, month, mode)
-    )
+    await callback.message.edit_reply_markup(reply_markup=build_calendar(year, month, mode))
     await callback.answer()
 
 
@@ -146,15 +131,12 @@ async def calendar_next(callback: CallbackQuery):
     year = int(year)
     month = int(month)
 
-    if month == 12:
-        year += 1
+    month += 1
+    if month == 13:
         month = 1
-    else:
-        month += 1
+        year += 1
 
-    await callback.message.edit_reply_markup(
-        reply_markup=build_calendar(year, month, mode)
-    )
+    await callback.message.edit_reply_markup(reply_markup=build_calendar(year, month, mode))
     await callback.answer()
 
 
@@ -177,10 +159,7 @@ async def calendar_date(callback: CallbackQuery, state: FSMContext):
         checkin = data.get("checkin")
 
         if selected_date <= checkin:
-            await callback.answer(
-                "Дата выезда должна быть позже даты заезда.",
-                show_alert=True,
-            )
+            await callback.answer("Дата выезда должна быть позже даты заезда.", show_alert=True)
             return
 
         await state.update_data(checkout=selected_date)
@@ -231,17 +210,10 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         if not room_id:
             continue
 
-        if room_id not in cheapest_by_room:
-            cheapest_by_room[room_id] = stay
-            continue
-
-        if price < get_price(cheapest_by_room[room_id]):
+        if room_id not in cheapest_by_room or price < get_price(cheapest_by_room[room_id]):
             cheapest_by_room[room_id] = stay
 
-    sorted_stays = sorted(
-        cheapest_by_room.values(),
-        key=get_price,
-    )
+    sorted_stays = sorted(cheapest_by_room.values(), key=get_price)
 
     checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
     checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
@@ -250,6 +222,9 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
     for index, stay in enumerate(sorted_stays, start=1):
         room_id = str(stay.get("roomType", {}).get("id"))
         room_info = room_types_map.get(room_id, {})
+
+        rate_id = str(stay.get("ratePlan", {}).get("id"))
+        rate_name = rate_plans_map.get(rate_id, {}).get("name", "Неизвестный тариф")
 
         room_name = room_info.get("name", f"Апартамент #{index}")
         description = clean_description(room_info.get("description", ""))
@@ -266,34 +241,22 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
         booking_link = stay.get("bookingFormLink", "")
-        rate_id = str(stay.get("ratePlan", {}).get("id"))
-
-rate_name = rate_plans_map.get(
-    rate_id,
-    {}
-).get("name", "Неизвестный тариф")
-        
 
         text = (
             f"🏠 <b>{room_name}</b>\n\n"
             f"👥 Вместимость: {placement}\n"
+            f"🏷 Тариф: <b>{rate_name}</b>\n"
             f"🌙 Ночей: {nights}\n\n"
             f"💵 За сутки: <b>{format_price(price_per_night)} {currency_text}</b>\n"
             f"💰 Итого: <b>{format_price(price_total)} {currency_text}</b>\n\n"
             f"📦 Свободно: {availability}\n\n"
             f"📝 {description}\n\n"
             f"✅ Доступно для бронирования"
-            f"🏷 Тариф: <b>{rate_name}</b>\n"
         )
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="🔗 Забронировать",
-                        url=booking_link,
-                    )
-                ]
+                [InlineKeyboardButton(text="🔗 Забронировать", url=booking_link)]
             ]
         )
 
