@@ -99,5 +99,18 @@ class ExelyAPI:
         response.raise_for_status()
         return response.json()
 
+async def get_rate_plans_map(self, property_id: str = "505576"):
+    data = await self.get_property_full(property_id)
+
+    result = {}
+
+    for rate in data.get("ratePlans", []):
+        result[str(rate["id"])] = {
+            "name": rate.get("name", ""),
+            "currency": rate.get("currency", ""),
+        }
+
+    return result
+
 
 exely = ExelyAPI()
