@@ -215,11 +215,16 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-    cheapest_by_room = {}
+        cheapest_by_room = {}
 
     for stay in room_stays:
         room_id = str(stay.get("roomType", {}).get("id"))
-        price = stay.get("total", {}).get("priceBeforeTax", 0)
+
+        price = (
+            stay.get("total", {}).get("priceAfterTax")
+            or stay.get("total", {}).get("priceBeforeTax")
+            or 0
+        )
 
         if not room_id:
             continue
@@ -228,11 +233,16 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             cheapest_by_room[room_id] = stay
             continue
 
-        old_price = cheapest_by_room[room_id].get("total", {}).get("priceBeforeTax", 0)
+        old_price = (
+            cheapest_by_room[room_id].get("total", {}).get("priceAfterTax")
+            or cheapest_by_room[room_id].get("total", {}).get("priceBeforeTax")
+            or 0
+        )
+
         if price < old_price:
             cheapest_by_room[room_id] = stay
 
-   for index, stay in enumerate(list(cheapest_by_room.values()), start=1):
+    for index, stay in enumerate(list(cheapest_by_room.values()), start=1):
         room_id = str(stay.get("roomType", {}).get("id"))
         room_info = room_types_map.get(room_id, {})
 
@@ -241,16 +251,15 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         images = room_info.get("images", [])
         image_url = images[0] if images else None
 
-       price_total = (
-    stay.get("total", {}).get("priceAfterTax")
-    or stay.get("total", {}).get("priceBeforeTax")
-    or 0
-)
+        price_total = (
+            stay.get("total", {}).get("priceAfterTax")
+            or stay.get("total", {}).get("priceBeforeTax")
+            or 0
+        )
 
         checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
         checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
         nights = (checkout_date - checkin_date).days
-
         price_per_night = price_total / nights if nights > 0 else price_total
 
         currency = stay.get("currencyCode", "UZS")
