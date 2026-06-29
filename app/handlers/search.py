@@ -47,25 +47,29 @@ def clean_description(value: str, limit: int = 220) -> str:
     return value
 
 
+def get_price(stay: dict) -> float:
+    total = stay.get("total", {})
+    return total.get("priceAfterTax") or total.get("priceBeforeTax") or 0
+
+
 def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
     today = date.today()
-    keyboard = []
-
-    keyboard.append([
-        InlineKeyboardButton(text="◀️", callback_data=f"cal_prev:{mode}:{year}:{month}"),
-        InlineKeyboardButton(text=f"{MONTHS_RU[month]} {year}", callback_data="ignore"),
-        InlineKeyboardButton(text="▶️", callback_data=f"cal_next:{mode}:{year}:{month}"),
-    ])
-
-    keyboard.append([
-        InlineKeyboardButton(text="Пн", callback_data="ignore"),
-        InlineKeyboardButton(text="Вт", callback_data="ignore"),
-        InlineKeyboardButton(text="Ср", callback_data="ignore"),
-        InlineKeyboardButton(text="Чт", callback_data="ignore"),
-        InlineKeyboardButton(text="Пт", callback_data="ignore"),
-        InlineKeyboardButton(text="Сб", callback_data="ignore"),
-        InlineKeyboardButton(text="Вс", callback_data="ignore"),
-    ])
+    keyboard = [
+        [
+            InlineKeyboardButton(text="◀️", callback_data=f"cal_prev:{mode}:{year}:{month}"),
+            InlineKeyboardButton(text=f"{MONTHS_RU[month]} {year}", callback_data="ignore"),
+            InlineKeyboardButton(text="▶️", callback_data=f"cal_next:{mode}:{year}:{month}"),
+        ],
+        [
+            InlineKeyboardButton(text="Пн", callback_data="ignore"),
+            InlineKeyboardButton(text="Вт", callback_data="ignore"),
+            InlineKeyboardButton(text="Ср", callback_data="ignore"),
+            InlineKeyboardButton(text="Чт", callback_data="ignore"),
+            InlineKeyboardButton(text="Пт", callback_data="ignore"),
+            InlineKeyboardButton(text="Сб", callback_data="ignore"),
+            InlineKeyboardButton(text="Вс", callback_data="ignore"),
+        ],
+    ]
 
     for week in calendar.monthcalendar(year, month):
         row = []
@@ -85,7 +89,6 @@ def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
                         callback_data=f"cal_date:{mode}:{current_date.isoformat()}",
                     )
                 )
-
         keyboard.append(row)
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -174,7 +177,10 @@ async def calendar_date(callback: CallbackQuery, state: FSMContext):
         checkin = data.get("checkin")
 
         if selected_date <= checkin:
-            await callback.answer("Дата выезда должна быть позже даты заезда.", show_alert=True)
+            await callback.answer(
+                "Дата выезда должна быть позже даты заезда.",
+                show_alert=True,
+            )
             return
 
         await state.update_data(checkout=selected_date)
@@ -215,16 +221,11 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-cheapest_by_room = {}
+    cheapest_by_room = {}
 
     for stay in room_stays:
         room_id = str(stay.get("roomType", {}).get("id"))
-
-        price = (
-            stay.get("total", {}).get("priceAfterTax")
-            or stay.get("total", {}).get("priceBeforeTax")
-            or 0
-        )
+        price = get_price(stay)
 
         if not room_id:
             continue
@@ -233,42 +234,29 @@ cheapest_by_room = {}
             cheapest_by_room[room_id] = stay
             continue
 
-        old_price = (
-            cheapest_by_room[room_id].get("total", {}).get("priceAfterTax")
-            or cheapest_by_room[room_id].get("total", {}).get("priceBeforeTax")
-            or 0
-        )
-
-        if price < old_price:
+        if price < get_price(cheapest_by_room[room_id]):
             cheapest_by_room[room_id] = stay
 
-   sorted_stays = sorted(
-    cheapest_by_room.values(),
-    key=lambda s: (
-        s.get("total", {}).get("priceAfterTax")
-        or s.get("total", {}).get("priceBeforeTax")
-        or 0
+    sorted_stays = sorted(
+        cheapest_by_room.values(),
+        key=get_price,
     )
-)
 
-for index, stay in enumerate(sorted_stays, start=1):
+    checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
+    checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
+    nights = (checkout_date - checkin_date).days
+
+    for index, stay in enumerate(sorted_stays, start=1):
         room_id = str(stay.get("roomType", {}).get("id"))
         room_info = room_types_map.get(room_id, {})
 
         room_name = room_info.get("name", f"Апартамент #{index}")
         description = clean_description(room_info.get("description", ""))
+
         images = room_info.get("images", [])
         image_url = images[0] if images else None
 
-        price_total = (
-            stay.get("total", {}).get("priceAfterTax")
-            or stay.get("total", {}).get("priceBeforeTax")
-            or 0
-        )
-
-        checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
-        checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
-        nights = (checkout_date - checkin_date).days
+        price_total = get_price(stay)
         price_per_night = price_total / nights if nights > 0 else price_total
 
         currency = stay.get("currencyCode", "UZS")
@@ -279,15 +267,15 @@ for index, stay in enumerate(sorted_stays, start=1):
         booking_link = stay.get("bookingFormLink", "")
 
         text = (
-    f"🏠 <b>{room_name}</b>\n\n"
-    f"👥 Вместимость: {placement}\n"
-    f"🌙 Ночей: {nights}\n\n"
-    f"💵 За сутки: <b>{format_price(price_per_night)} {currency_text}</b>\n"
-    f"💰 Итого: <b>{format_price(price_total)} {currency_text}</b>\n\n"
-    f"📦 Свободно: {availability}\n\n"
-    f"📝 {description}\n\n"
-    f"✅ Доступно для бронирования"
-)
+            f"🏠 <b>{room_name}</b>\n\n"
+            f"👥 Вместимость: {placement}\n"
+            f"🌙 Ночей: {nights}\n\n"
+            f"💵 За сутки: <b>{format_price(price_per_night)} {currency_text}</b>\n"
+            f"💰 Итого: <b>{format_price(price_total)} {currency_text}</b>\n\n"
+            f"📦 Свободно: {availability}\n\n"
+            f"📝 {description}\n\n"
+            f"✅ Доступно для бронирования"
+        )
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
