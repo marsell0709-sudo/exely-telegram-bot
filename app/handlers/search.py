@@ -209,6 +209,7 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             adults=guests,
         )
         room_types_map = await exely.get_room_types_map()
+        rate_plans_map = await exely.get_rate_plans_map()
     except Exception as e:
         await callback.message.answer(f"❌ Ошибка поиска в Exely:\n\n{e}")
         await callback.answer()
