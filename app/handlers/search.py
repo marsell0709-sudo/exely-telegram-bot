@@ -232,7 +232,7 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         if price < old_price:
             cheapest_by_room[room_id] = stay
 
-    for index, stay in enumerate(list(cheapest_by_room.values())[:5], start=1):
+   for index, stay in enumerate(list(cheapest_by_room.values()), start=1):
         room_id = str(stay.get("roomType", {}).get("id"))
         room_info = room_types_map.get(room_id, {})
 
