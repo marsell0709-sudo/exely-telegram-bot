@@ -241,7 +241,11 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         images = room_info.get("images", [])
         image_url = images[0] if images else None
 
-        price_total = stay.get("total", {}).get("priceBeforeTax", 0)
+       price_total = (
+    stay.get("total", {}).get("priceAfterTax")
+    or stay.get("total", {}).get("priceBeforeTax")
+    or 0
+)
 
         checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
         checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
