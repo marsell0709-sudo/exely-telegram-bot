@@ -215,7 +215,7 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-        cheapest_by_room = {}
+cheapest_by_room = {}
 
     for stay in room_stays:
         room_id = str(stay.get("roomType", {}).get("id"))
