@@ -265,6 +265,8 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
         booking_link = stay.get("bookingFormLink", "")
+        rate_id = stay.get("ratePlan", {}).get("id", "—")
+        
 
         text = (
             f"🏠 <b>{room_name}</b>\n\n"
@@ -275,6 +277,7 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             f"📦 Свободно: {availability}\n\n"
             f"📝 {description}\n\n"
             f"✅ Доступно для бронирования"
+            f"🏷 Тариф ID: {rate_id}\n"
         )
 
         keyboard = InlineKeyboardMarkup(
