@@ -254,25 +254,25 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             f"✅ Доступно для бронирования"
         )
 
-       manager_telegram = "https://t.me/Royalrentals_group"
-manager_whatsapp = "https://wa.me/998908225400"
+        manager_telegram = "https://t.me/Royalrentals_group"
+        manager_whatsapp = "https://wa.me/998908225400"
 
-keyboard = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="💬 Написать в Telegram",
-                url=manager_telegram,
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="🟢 Написать в WhatsApp",
-                url=manager_whatsapp,
-            )
-        ],
-    ]
-)
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="💬 Написать в Telegram",
+                        url=manager_telegram,
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🟢 Написать в WhatsApp",
+                        url=manager_whatsapp,
+                    )
+                ],
+            ]
+        )
 
         if image_url:
             await callback.message.answer_photo(
