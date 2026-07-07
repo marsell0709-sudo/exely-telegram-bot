@@ -12,3 +12,5 @@ async def send_booking_to_manager(
         text=text,
         parse_mode="HTML",
     )
+@router.callback_query(F.data.startswith("booking:"))
+async def create_booking(...):
