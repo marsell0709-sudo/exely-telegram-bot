@@ -5,7 +5,7 @@ from datetime import date, datetime
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, InputMediaPhoto
 
 from app.config import settings
 from app.services.exely import exely
@@ -319,19 +319,19 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             ]
         )
 
-        if image_url:
-            await callback.message.answer_photo(
-                photo=image_url,
-                caption=text,
-                parse_mode="HTML",
-                reply_markup=keyboard,
-            )
-        else:
-            await callback.message.answer(
-                text,
-                parse_mode="HTML",
-                reply_markup=keyboard,
-                disable_web_page_preview=True,
+       if images:
+            media = [
+                InputMediaPhoto(media=image)
+                for image in images[:5]
+    ]
+
+    await callback.message.answer_media_group(media=media)
+
+        await callback.message.answer(
+            text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+            disable_web_page_preview=True,
             )
 
     await callback.answer()
