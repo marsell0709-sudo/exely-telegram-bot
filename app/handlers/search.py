@@ -224,7 +224,7 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         room_info = room_types_map.get(room_id, {})
 
         rate_id = str(stay.get("ratePlan", {}).get("id"))
-        rate_name = rate_plans_map.get(rate_id, {}).get("name", "Неизвестный тариф")
+        rate_name = rate_plans_map.get(rate_id, {}).get("name", "Телеграм")
 
         room_name = room_info.get("name", f"Апартамент #{index}")
         description = clean_description(room_info.get("description", ""))
