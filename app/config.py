@@ -15,6 +15,7 @@ class Settings:
 
     EXELY_CLIENT_ID = os.getenv("EXELY_CLIENT_ID")
     EXELY_CLIENT_SECRET = os.getenv("EXELY_CLIENT_SECRET")
+    TELEGRAM_RATE_PLAN_ID: str
 
 
 settings = Settings()
