@@ -323,16 +323,16 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             media = [
                 InputMediaPhoto(media=image)
                 for image in images[:5]
-    ]
+           ]
 
             await callback.message.answer_media_group(media=media)
 
-            await callback.message.answer(
+      await callback.message.answer(
             text,
             parse_mode="HTML",
             reply_markup=keyboard,
             disable_web_page_preview=True,
-            )
+    )
 
     await callback.answer()
 
