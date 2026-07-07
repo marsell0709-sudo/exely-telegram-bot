@@ -267,9 +267,9 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             inline_keyboard=[
                 [
                    InlineKeyboardButton(
-                        text="📩 Отправить заявку",
-                        callback_data=f"booking:{room_id}",
-                            )
+                    text="📩 Отправить заявку",
+                    callback_data=f"booking:{room_id}",
+                        )
                 ],
                 [
                     InlineKeyboardButton(
