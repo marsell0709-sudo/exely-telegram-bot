@@ -1,6 +1,9 @@
-from aiogram import Bot
+from aiogram import Bot, F, Router
+from aiogram.types import CallbackQuery
 
 from app.config import settings
+
+router = Router()
 
 
 async def send_booking_to_manager(
@@ -12,5 +15,8 @@ async def send_booking_to_manager(
         text=text,
         parse_mode="HTML",
     )
+
+
 @router.callback_query(F.data.startswith("booking:"))
-async def create_booking(...):
+async def create_booking(callback: CallbackQuery):
+    await callback.answer("🚧 Эта функция сейчас в разработке.", show_alert=True)
