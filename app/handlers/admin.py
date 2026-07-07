@@ -115,3 +115,10 @@ async def content_swagger(message: Message):
 
     except Exception as e:
         await message.answer(f"❌ Ошибка Content Swagger:\n\n{e}")
+
+@router.message(Command("myid"))
+async def my_id(message: Message):
+    await message.answer(
+        f"Ваш Telegram ID:\n\n<code>{message.from_user.id}</code>",
+        parse_mode="HTML"
+    )
