@@ -266,10 +266,10 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(
-                        text="💬 Написать в Telegram",
-                        url=manager_telegram,
-                    )
+                   InlineKeyboardButton(
+                        text="📩 Отправить заявку",
+                        callback_data=f"book:{room_id}"
+                        )
                 ],
                 [
                     InlineKeyboardButton(
