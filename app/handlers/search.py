@@ -196,6 +196,11 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         return
 
     room_stays = result.get("roomStays", [])
+    room_stays = [
+    stay
+    for stay in room_stays
+    if str(stay.get("ratePlan", {}).get("id")) == settings.TELEGRAM_RATE_PLAN_ID
+]
 
     if not room_stays:
         await callback.message.answer("❌ На выбранные даты свободных вариантов нет.")
