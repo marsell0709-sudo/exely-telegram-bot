@@ -7,7 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from app.config import settings
 from app.handlers import search, start
 from app.handlers.admin import router as admin_router
-from app.handlers import booking
+from app.handlers.booking import router as booking_router
 
 
 async def main() -> None:
