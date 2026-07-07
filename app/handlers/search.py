@@ -7,10 +7,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.services.exely import exely
 from app.config import settings
+from app.services.exely import exely
 
 router = Router()
+booking_cache = {}
 
 MONTHS_RU = {
     1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
@@ -32,10 +33,15 @@ def format_price(value: float) -> str:
 def clean_description(value: str, limit: int = 220) -> str:
     if not value:
         return "Описание скоро будет добавлено."
+
     value = re.sub(r"<[^>]+>", " ", value)
     value = value.replace("\\n", " ").replace("\n", " ").replace("\r", " ")
     value = re.sub(r"\s+", " ", value).strip()
-    return value[:limit].strip() + "..." if len(value) > limit else value
+
+    if len(value) > limit:
+        return value[:limit].strip() + "..."
+
+    return value
 
 
 def get_price(stay: dict) -> float:
@@ -45,6 +51,7 @@ def get_price(stay: dict) -> float:
 
 def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
     today = date.today()
+
     keyboard = [
         [
             InlineKeyboardButton(text="◀️", callback_data=f"cal_prev:{mode}:{year}:{month}"),
@@ -64,12 +71,14 @@ def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
 
     for week in calendar.monthcalendar(year, month):
         row = []
+
         for day in week:
             if day == 0:
                 row.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
                 continue
 
             current_date = date(year, month, day)
+
             if current_date < today:
                 row.append(InlineKeyboardButton(text="·", callback_data="ignore"))
             else:
@@ -79,6 +88,7 @@ def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
                         callback_data=f"cal_date:{mode}:{current_date.isoformat()}",
                     )
                 )
+
         keyboard.append(row)
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -104,7 +114,9 @@ def guests_keyboard() -> InlineKeyboardMarkup:
 @router.message(F.text == "🏠 Найти квартиру")
 async def find_apartment(message: Message, state: FSMContext):
     today = date.today()
+
     await state.set_state(SearchState.checkin)
+
     await message.answer(
         "📅 Выберите дату заезда:",
         reply_markup=build_calendar(today.year, today.month, "checkin"),
@@ -114,30 +126,40 @@ async def find_apartment(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("cal_prev:"))
 async def calendar_prev(callback: CallbackQuery):
     _, mode, year, month = callback.data.split(":")
+
     year = int(year)
     month = int(month)
 
     month -= 1
+
     if month == 0:
         month = 12
         year -= 1
 
-    await callback.message.edit_reply_markup(reply_markup=build_calendar(year, month, mode))
+    await callback.message.edit_reply_markup(
+        reply_markup=build_calendar(year, month, mode)
+    )
+
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("cal_next:"))
 async def calendar_next(callback: CallbackQuery):
     _, mode, year, month = callback.data.split(":")
+
     year = int(year)
     month = int(month)
 
     month += 1
+
     if month == 13:
         month = 1
         year += 1
 
-    await callback.message.edit_reply_markup(reply_markup=build_calendar(year, month, mode))
+    await callback.message.edit_reply_markup(
+        reply_markup=build_calendar(year, month, mode)
+    )
+
     await callback.answer()
 
 
@@ -150,6 +172,7 @@ async def calendar_date(callback: CallbackQuery, state: FSMContext):
         await state.set_state(SearchState.checkout)
 
         selected = datetime.strptime(selected_date, "%Y-%m-%d").date()
+
         await callback.message.edit_text(
             f"✅ Дата заезда: {selected_date}\n\n📅 Теперь выберите дату выезда:",
             reply_markup=build_calendar(selected.year, selected.month, "checkout"),
@@ -160,7 +183,10 @@ async def calendar_date(callback: CallbackQuery, state: FSMContext):
         checkin = data.get("checkin")
 
         if selected_date <= checkin:
-            await callback.answer("Дата выезда должна быть позже даты заезда.", show_alert=True)
+            await callback.answer(
+                "Дата выезда должна быть позже даты заезда.",
+                show_alert=True,
+            )
             return
 
         await state.update_data(checkout=selected_date)
@@ -177,6 +203,7 @@ async def calendar_date(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("guests:"))
 async def choose_guests(callback: CallbackQuery, state: FSMContext):
     guests = int(callback.data.split(":")[1])
+
     data = await state.get_data()
     await state.clear()
 
@@ -188,19 +215,22 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             departure_date=data["checkout"],
             adults=guests,
         )
+
         room_types_map = await exely.get_room_types_map()
         rate_plans_map = await exely.get_rate_plans_map()
+
     except Exception as e:
         await callback.message.answer(f"❌ Ошибка поиска в Exely:\n\n{e}")
         await callback.answer()
         return
 
     room_stays = result.get("roomStays", [])
+
     room_stays = [
-    stay
-    for stay in room_stays
-    if str(stay.get("ratePlan", {}).get("id")) == settings.TELEGRAM_RATE_PLAN_ID
-]
+        stay
+        for stay in room_stays
+        if str(stay.get("ratePlan", {}).get("id")) == settings.TELEGRAM_RATE_PLAN_ID
+    ]
 
     if not room_stays:
         await callback.message.answer("❌ На выбранные даты свободных вариантов нет.")
@@ -219,7 +249,10 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
         if room_id not in cheapest_by_room or price < get_price(cheapest_by_room[room_id]):
             cheapest_by_room[room_id] = stay
 
-    sorted_stays = sorted(cheapest_by_room.values(), key=get_price)
+    sorted_stays = sorted(
+        cheapest_by_room.values(),
+        key=get_price,
+    )
 
     checkin_date = datetime.strptime(data["checkin"], "%Y-%m-%d").date()
     checkout_date = datetime.strptime(data["checkout"], "%Y-%m-%d").date()
@@ -246,7 +279,16 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
 
         availability = stay.get("availability", 0)
         placement = stay.get("fullPlacementsName", "")
-        booking_link = stay.get("bookingFormLink", "")
+
+        booking_cache[room_id] = {
+            "room_name": room_name,
+            "checkin": data["checkin"],
+            "checkout": data["checkout"],
+            "guests": guests,
+            "nights": nights,
+            "price_total": price_total,
+            "currency_text": currency_text,
+        }
 
         text = (
             f"🏠 <b>{room_name}</b>\n\n"
@@ -260,21 +302,18 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             f"✅ Доступно для бронирования"
         )
 
-        manager_telegram = "https://t.me/Royalrentals_group"
-        manager_whatsapp = "https://wa.me/998908225400"
-
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                   InlineKeyboardButton(
-                    text="📩 Отправить заявку",
-                    callback_data=f"booking:{room_id}",
-                        )
+                    InlineKeyboardButton(
+                        text="📩 Отправить заявку",
+                        callback_data=f"booking:{room_id}",
+                    )
                 ],
                 [
                     InlineKeyboardButton(
                         text="🟢 Написать в WhatsApp",
-                        url=manager_whatsapp,
+                        url="https://wa.me/998908225400",
                     )
                 ],
             ]
@@ -296,6 +335,53 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
             )
 
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("booking:"))
+async def booking_request(callback: CallbackQuery):
+    room_id = callback.data.split(":")[1]
+
+    booking = booking_cache.get(room_id)
+
+    if not booking:
+        await callback.answer(
+            "Заявка устарела. Выполните поиск заново.",
+            show_alert=True,
+        )
+        return
+
+    user = callback.from_user
+
+    username = f"@{user.username}" if user.username else "не указан"
+
+    manager_text = (
+        "🏠 <b>НОВАЯ ЗАЯВКА</b>\n\n"
+        f"🏢 Апартамент: <b>{booking['room_name']}</b>\n"
+        f"📅 Заезд: {booking['checkin']}\n"
+        f"📅 Выезд: {booking['checkout']}\n"
+        f"🌙 Ночей: {booking['nights']}\n"
+        f"👥 Гостей: {booking['guests']}\n\n"
+        f"💰 Стоимость: <b>{format_price(booking['price_total'])} {booking['currency_text']}</b>\n\n"
+        "━━━━━━━━━━━━━━\n\n"
+        "👤 <b>Клиент</b>\n"
+        f"Имя: {user.full_name}\n"
+        f"Username: {username}\n"
+        f"Telegram ID: <code>{user.id}</code>"
+    )
+
+    await callback.bot.send_message(
+        chat_id=settings.MANAGER_CHAT_ID,
+        text=manager_text,
+        parse_mode="HTML",
+    )
+
+    await callback.message.answer(
+        "✅ Спасибо!\n\n"
+        "Ваша заявка успешно отправлена.\n\n"
+        "Наш менеджер свяжется с вами в ближайшее время."
+    )
+
+    await callback.answer("Заявка отправлена ✅")
 
 
 @router.callback_query(F.data == "ignore")
