@@ -350,6 +350,7 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
 
     await callback.answer()
 
+
 @router.callback_query(F.data.startswith("booking:"))
 async def booking_request(callback: CallbackQuery):
     room_id = callback.data.split(":")[1]
@@ -407,45 +408,7 @@ async def booking_request(callback: CallbackQuery):
         reply_markup=manager_keyboard,
     )
 
-   
-    await callback.answer("Заявка отправлена ✅")
-
-    room_id = callback.data.split(":")[1]
-
-    booking = booking_cache.get(room_id)
-
-    if not booking:
-        await callback.answer(
-            "Заявка устарела. Выполните поиск заново.",
-            show_alert=True,
-        )
-        return
-
-    user = callback.from_user
-    username = f"@{user.username}" if user.username else "не указан"
-
-    manager_text = (
-        "🏠 <b>НОВАЯ ЗАЯВКА</b>\n\n"
-        f"🏢 Апартамент: <b>{booking['room_name']}</b>\n"
-        f"📅 Заезд: {booking['checkin']}\n"
-        f"📅 Выезд: {booking['checkout']}\n"
-        f"🌙 Ночей: {booking['nights']}\n"
-        f"👥 Гостей: {booking['guests']}\n\n"
-        f"💰 Стоимость: <b>{format_price(booking['price_total'])} {booking['currency_text']}</b>\n\n"
-        "━━━━━━━━━━━━━━\n\n"
-        "👤 <b>Клиент</b>\n"
-        f"Имя: {user.full_name}\n"
-        f"Username: {username}\n"
-        f"Telegram ID: <code>{user.id}</code>"
-    )
-
-    await callback.bot.send_message(
-        chat_id=settings.MANAGER_CHAT_ID,
-        text=manager_text,
-        parse_mode="HTML",
-    )
-
-   await callback.message.answer(
+    await callback.message.answer(
         "✅ Спасибо!\n\n"
         "Ваша заявка успешно отправлена.\n\n"
         "Наш менеджер свяжется с вами в ближайшее время."
@@ -453,10 +416,10 @@ async def booking_request(callback: CallbackQuery):
 
     await callback.answer("Заявка отправлена ✅")
 
+
 @router.callback_query(F.data.startswith("manager_accept:"))
 async def manager_accept(callback: CallbackQuery):
     _, user_id, room_id = callback.data.split(":")
-    booking = booking_cache.get(room_id)
 
     await callback.bot.send_message(
         chat_id=int(user_id),
@@ -466,11 +429,10 @@ async def manager_accept(callback: CallbackQuery):
         ),
     )
 
-    if booking:
-        await callback.message.edit_text(
-            callback.message.html_text + "\n\n✅ <b>Статус: заявка принята</b>",
-            parse_mode="HTML",
-        )
+    await callback.message.edit_text(
+        callback.message.html_text + "\n\n✅ <b>Статус: заявка принята</b>",
+        parse_mode="HTML",
+    )
 
     await callback.answer("Заявка принята ✅")
 
@@ -478,7 +440,6 @@ async def manager_accept(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("manager_reject:"))
 async def manager_reject(callback: CallbackQuery):
     _, user_id, room_id = callback.data.split(":")
-    booking = booking_cache.get(room_id)
 
     await callback.bot.send_message(
         chat_id=int(user_id),
@@ -488,13 +449,14 @@ async def manager_reject(callback: CallbackQuery):
         ),
     )
 
-    if booking:
-        await callback.message.edit_text(
-            callback.message.html_text + "\n\n❌ <b>Статус: заявка отклонена</b>",
-            parse_mode="HTML",
-        )
+    await callback.message.edit_text(
+        callback.message.html_text + "\n\n❌ <b>Статус: заявка отклонена</b>",
+        parse_mode="HTML",
+    )
 
     await callback.answer("Заявка отклонена")
+
+
 @router.callback_query(F.data.startswith("gallery:"))
 async def show_gallery(callback: CallbackQuery):
     room_id = callback.data.split(":")[1]
