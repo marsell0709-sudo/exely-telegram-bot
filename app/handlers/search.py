@@ -407,12 +407,7 @@ async def booking_request(callback: CallbackQuery):
         reply_markup=manager_keyboard,
     )
 
-    await callback.message.answer(
-        "✅ Спасибо!\n\n"
-        "Ваша заявка успешно отправлена.\n\n"
-        "Наш менеджер свяжется с вами в ближайшее время."
-    )
-
+   
     await callback.answer("Заявка отправлена ✅")
 
     room_id = callback.data.split(":")[1]
@@ -450,7 +445,7 @@ async def booking_request(callback: CallbackQuery):
         parse_mode="HTML",
     )
 
-    await callback.message.answer(
+   await callback.message.answer(
         "✅ Спасибо!\n\n"
         "Ваша заявка успешно отправлена.\n\n"
         "Наш менеджер свяжется с вами в ближайшее время."
