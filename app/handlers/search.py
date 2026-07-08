@@ -354,6 +354,68 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("booking:"))
 async def booking_request(callback: CallbackQuery):
     room_id = callback.data.split(":")[1]
+    booking = booking_cache.get(room_id)
+
+    if not booking:
+        await callback.answer("Заявка устарела. Выполните поиск заново.", show_alert=True)
+        return
+
+    user = callback.from_user
+    username = f"@{user.username}" if user.username else "не указан"
+
+    manager_text = (
+        "🏠 <b>НОВАЯ ЗАЯВКА</b>\n\n"
+        f"🏢 Апартамент: <b>{booking['room_name']}</b>\n"
+        f"📅 Заезд: {booking['checkin']}\n"
+        f"📅 Выезд: {booking['checkout']}\n"
+        f"🌙 Ночей: {booking['nights']}\n"
+        f"👥 Гостей: {booking['guests']}\n\n"
+        f"💰 Стоимость: <b>{format_price(booking['price_total'])} {booking['currency_text']}</b>\n\n"
+        "━━━━━━━━━━━━━━\n\n"
+        "👤 <b>Клиент</b>\n"
+        f"Имя: {user.full_name}\n"
+        f"Username: {username}\n"
+        f"Telegram ID: <code>{user.id}</code>"
+    )
+
+    manager_keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Принять заявку",
+                    callback_data=f"manager_accept:{user.id}:{room_id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💬 Написать клиенту",
+                    url=f"tg://user?id={user.id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="❌ Отклонить",
+                    callback_data=f"manager_reject:{user.id}:{room_id}",
+                )
+            ],
+        ]
+    )
+
+    await callback.bot.send_message(
+        chat_id=settings.MANAGER_CHAT_ID,
+        text=manager_text,
+        parse_mode="HTML",
+        reply_markup=manager_keyboard,
+    )
+
+    await callback.message.answer(
+        "✅ Спасибо!\n\n"
+        "Ваша заявка успешно отправлена.\n\n"
+        "Наш менеджер свяжется с вами в ближайшее время."
+    )
+
+    await callback.answer("Заявка отправлена ✅")
+    room_id = callback.data.split(":")[1]
 
     booking = booking_cache.get(room_id)
 
