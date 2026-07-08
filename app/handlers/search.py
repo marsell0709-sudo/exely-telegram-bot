@@ -458,7 +458,48 @@ async def booking_request(callback: CallbackQuery):
 
     await callback.answer("Заявка отправлена ✅")
 
+@router.callback_query(F.data.startswith("manager_accept:"))
+async def manager_accept(callback: CallbackQuery):
+    _, user_id, room_id = callback.data.split(":")
+    booking = booking_cache.get(room_id)
 
+    await callback.bot.send_message(
+        chat_id=int(user_id),
+        text=(
+            "✅ Ваша заявка принята.\n\n"
+            "Менеджер уже занимается вашим бронированием и скоро свяжется с вами."
+        ),
+    )
+
+    if booking:
+        await callback.message.edit_text(
+            callback.message.html_text + "\n\n✅ <b>Статус: заявка принята</b>",
+            parse_mode="HTML",
+        )
+
+    await callback.answer("Заявка принята ✅")
+
+
+@router.callback_query(F.data.startswith("manager_reject:"))
+async def manager_reject(callback: CallbackQuery):
+    _, user_id, room_id = callback.data.split(":")
+    booking = booking_cache.get(room_id)
+
+    await callback.bot.send_message(
+        chat_id=int(user_id),
+        text=(
+            "❌ К сожалению, выбранный вариант сейчас недоступен.\n\n"
+            "Менеджер предложит вам альтернативные варианты."
+        ),
+    )
+
+    if booking:
+        await callback.message.edit_text(
+            callback.message.html_text + "\n\n❌ <b>Статус: заявка отклонена</b>",
+            parse_mode="HTML",
+        )
+
+    await callback.answer("Заявка отклонена")
 @router.callback_query(F.data.startswith("gallery:"))
 async def show_gallery(callback: CallbackQuery):
     room_id = callback.data.split(":")[1]
