@@ -350,7 +350,6 @@ async def choose_guests(callback: CallbackQuery, state: FSMContext):
 
     await callback.answer()
 
-
 @router.callback_query(F.data.startswith("booking:"))
 async def booking_request(callback: CallbackQuery):
     room_id = callback.data.split(":")[1]
@@ -415,6 +414,7 @@ async def booking_request(callback: CallbackQuery):
     )
 
     await callback.answer("Заявка отправлена ✅")
+
     room_id = callback.data.split(":")[1]
 
     booking = booking_cache.get(room_id)
