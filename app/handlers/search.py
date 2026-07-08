@@ -52,22 +52,35 @@ def get_price(stay: dict) -> float:
 def build_calendar(year: int, month: int, mode: str) -> InlineKeyboardMarkup:
     today = date.today()
 
-    keyboard = [
-        [
-            InlineKeyboardButton(text="◀️", callback_data=f"cal_prev:{mode}:{year}:{month}"),
-            InlineKeyboardButton(text=f"{MONTHS_RU[month]} {year}", callback_data="ignore"),
-            InlineKeyboardButton(text="▶️", callback_data=f"cal_next:{mode}:{year}:{month}"),
-        ],
-        [
-            InlineKeyboardButton(text="Пн", callback_data="ignore"),
-            InlineKeyboardButton(text="Вт", callback_data="ignore"),
-            InlineKeyboardButton(text="Ср", callback_data="ignore"),
-            InlineKeyboardButton(text="Чт", callback_data="ignore"),
-            InlineKeyboardButton(text="Пт", callback_data="ignore"),
-            InlineKeyboardButton(text="Сб", callback_data="ignore"),
-            InlineKeyboardButton(text="Вс", callback_data="ignore"),
-        ],
+    keyboard_buttons = [
+    [
+        InlineKeyboardButton(
+            text="📩 Отправить заявку",
+            callback_data=f"booking:{room_id}",
+        )
     ]
+]
+
+if images:
+    keyboard_buttons.append(
+        [
+            InlineKeyboardButton(
+                text="🖼 Смотреть все фотографии",
+                callback_data=f"gallery:{room_id}",
+            )
+        ]
+    )
+
+keyboard_buttons.append(
+    [
+        InlineKeyboardButton(
+            text="🟢 Написать в WhatsApp",
+            url="https://wa.me/998908225400",
+        )
+    ]
+)
+
+keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
     for week in calendar.monthcalendar(year, month):
         row = []
@@ -383,7 +396,34 @@ async def booking_request(callback: CallbackQuery):
 
     await callback.answer("Заявка отправлена ✅")
 
+@router.callback_query(F.data.startswith("gallery:"))
+async def show_gallery(callback: CallbackQuery):
+    room_id = callback.data.split(":")[1]
+    booking = booking_cache.get(room_id)
 
+    if not booking:
+        await callback.answer(
+            "Фотографии устарели. Выполните поиск заново.",
+            show_alert=True,
+        )
+        return
+
+    images = booking.get("images", [])
+
+    if not images:
+        await callback.answer(
+            "Фотографии для этого апартамента не найдены.",
+            show_alert=True,
+        )
+        return
+
+    media = [
+        InputMediaPhoto(media=image)
+        for image in images[:10]
+    ]
+
+    await callback.message.answer_media_group(media=media)
+    await callback.answer()
 @router.callback_query(F.data == "ignore")
 async def ignore_callback(callback: CallbackQuery):
     await callback.answer()
